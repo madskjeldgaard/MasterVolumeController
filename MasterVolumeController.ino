@@ -23,7 +23,7 @@ void setup() {
 
 // store previously sent values, to detect changes
 int previousA0 = -1;
-bool ledState = HIGH;
+bool ledState = LOW;
 bool muteState = false;
 
 elapsedMillis msec = 0;
