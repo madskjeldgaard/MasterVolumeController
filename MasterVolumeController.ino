@@ -46,21 +46,10 @@ void loop() {
     // Mute button
     if (pushbutton.update()) {
       if (pushbutton.fallingEdge()) {
-        if (muteState == false) {
-          // MUTE ON
-          muteState = true;
-          ledState = HIGH;
-          usbMIDI.sendNoteOn(44, 127, channel); // Note 44 = master mute
-          usbMIDI.sendNoteOff(44, 127, channel);
-        } else {
-          // MUTE OFF
-          muteState = false;
-          ledState = LOW;
-          usbMIDI.sendNoteOn(44, 127, channel); // Note 44 = master mute
-          usbMIDI.sendNoteOff(44, 127, channel);
-        }
-
-        // Set LED
+        muteState = !muteState;
+        ledState = muteState ? HIGH : LOW;
+        usbMIDI.sendNoteOn(44, 127, channel); // Note 44 = master mute
+        usbMIDI.sendNoteOff(44, 127, channel);
         digitalWrite(ledPin, ledState);
       }
     }
