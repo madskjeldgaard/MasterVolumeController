@@ -1,4 +1,5 @@
-![cute innit?](foto.JPG "opt title")
+![In a box made for screws](assets/screws1.jpg)
+
 
 ## Connections
 
@@ -15,3 +16,5 @@ Connect pin3 to GND
 
 Setting this up to use as master volume controller in SuperCollider is pretty easy. 
 Copy/paste the code in the supercollider example file into your SuperCollider startup file to automatically set this up.
+
+![In a box made for screws](assets/screws2.jpg)
