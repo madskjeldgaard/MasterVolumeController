@@ -4,40 +4,48 @@
 
 Server.local.waitForBoot{
 
-MIDIIn.connectAll();
+	// Adjust these to match the Teensy code
+	var potentiometerCC = 7;
+	var muteNoteNum = 44;
+	var midichan = 0;
 
-// Setup responder for master volume
-MIDIdef.cc(\masterVolume, {|...args| 
-	var value = args[0];
-	var ccNum = args[1];
-	var chan = args[2];
-	var id = args[3];
-	var volume = (value / 128.0).ampdb;
+	// Adjust this if device sourceid varies
+	var deviceSrcID = 1572864; 
 
-	"Server volume: % db".format(volume.round(0.01)).postln;
+	// ----------------
 
-	Server.local.volume = volume;
-}, 
-	ccNum: 7, 
-	srcID: 1572864
-).fix; // Make permanent between hardstops
+	// Connect midi
+	MIDIIn.connectAll();
 
-// Mute button
-MIDIdef.noteOn(\masterMute, {|...args| 
+	// Setup responder for master volume
+	MIDIdef.cc(\masterVolume, {|...args| 
+		var value = args[0];
+		var volume = (value / 128.0).ampdb;
 
-	if(Server.local.volume.isMuted, {
-		"Unmuting...".postln; 
-		Server.local.unmute 
-	}, {
-		"Muting...".postln; 
-		Server.local.mute 
-	})
+		"Server volume: % db".format(volume.round(0.01)).postln;
 
-}, 
-	noteNum: 44, 
-	chan: 0,
-	srcID: 1572864
-).fix; // Make permanent between hardstops
+		Server.local.volume = volume;
+	}, 
+		chan: midichan,
+		ccNum: potentiometerCC, 
+		srcID: deviceSrcID
+	).fix; // Make permanent between hardstops
+
+	// Mute button
+	MIDIdef.noteOn(\masterMute, {|...args| 
+
+		if(Server.local.volume.isMuted, {
+			"Unmuting...".postln; 
+			Server.local.unmute 
+		}, {
+			"Muting...".postln; 
+			Server.local.mute 
+		})
+
+	}, 
+		noteNum: muteNoteNum, 
+		chan: midichan,
+		srcID: deviceSrcID
+	).fix; // Make permanent between hardstops
 
 };
-
