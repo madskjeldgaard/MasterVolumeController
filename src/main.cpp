@@ -10,7 +10,8 @@ const int ledPin = 13; // Used to indicate if volume is muted
 
 // Setup button
 const int buttonPin = 1;
-Bounce pushbutton = Bounce(buttonPin, 10);  // 10 ms debounce
+Bounce pushbutton = Bounce(buttonPin, 50); // 10 ms debounce
+const int noteNum = 44;
 
 // Setup potentiometer
 enum POTDIRECTION { NORMAL, REVERSE };
@@ -72,8 +73,8 @@ inline void readMute() {
   if (readButton() == 1) {
     muteState = !muteState;
     ledState = muteState ? HIGH : LOW;
-    usbMIDI.sendNoteOn(44, 127, channel); // Note 44 = master mute
-    usbMIDI.sendNoteOff(44, 127, channel);
+    usbMIDI.sendNoteOn(noteNum, 127, channel); // Note 44 = master mute
+    usbMIDI.sendNoteOff(noteNum, 127, channel);
     digitalWrite(ledPin, ledState);
   }
 }
