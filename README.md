@@ -1,6 +1,16 @@
 ![In a box made for screws](assets/screws1.jpg)
 
 
+## Compiling
+The project is setup as platformio project.
+
+From the root of this repo run:
+```bash
+pio run -t upload
+```
+
+This will compile and upload the code to your Teensy
+
 ## Connections
 
 Button:
