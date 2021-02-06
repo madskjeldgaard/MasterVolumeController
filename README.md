@@ -10,3 +10,8 @@ Pot:
 Connect pin1 to 3.3v
 Connect pin2 to A0 (pin 14)
 Connect pin3 to GND
+
+## Using as Server volume controller in SuperCollider
+
+Setting this up to use as master volume controller in SuperCollider is pretty easy. 
+Copy/paste the code in the supercollider example file into your SuperCollider startup file to automatically set this up.
