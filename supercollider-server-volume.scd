@@ -4,18 +4,20 @@
 
 Server.local.waitForBoot{
 
+	var deviceName = "MasterVol";
+
 	// Adjust these to match the Teensy code
 	var potentiometerCC = 7;
 	var muteNoteNum = 44;
 	var midichan = 0;
 
-	// Adjust this if device sourceid varies
-	var deviceSrcID = 1572864; 
+	var deviceSrcID; 
 
 	// ----------------
-
 	// Connect midi
 	MIDIIn.connectAll();
+
+	deviceSrcID = MIDIClient.sources.select{|client| client.device == deviceName}[0].uid; 
 
 	// Setup responder for master volume
 	MIDIdef.cc(\masterVolume, {|...args| 
