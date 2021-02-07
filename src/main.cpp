@@ -13,7 +13,7 @@ const int readSmoothing = 8;
 const int channel = 1;
 
 // Note number of noteOn/noteOff for button
-const int noteNum = 44;
+int noteNum = 44;
 
 // Setup led pin
 const int ledPin = 13; // Used to indicate if volume is muted
@@ -162,7 +162,11 @@ void setup() {
   // Read button and use value to set midi cc mode
   if (digitalRead(buttonPin) == HIGH) {
     mode = MODE_14BIT;
+
+    // Offset both the potentiometer's cc num and the note number for the button
+    // when in 14 bit mode
     potCCNum += 1;
+    noteNum += 1;
 
     // Announce 14 bit mode
     blinkLED(150);
