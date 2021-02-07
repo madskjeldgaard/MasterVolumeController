@@ -2,8 +2,18 @@
 #include <Bounce.h>
 #include <ResponsiveAnalogRead.h>
 
+const auto debug = false;
+
+// Set bits in ADC (advertied usable bits are 12 for LC, 13 for 3.2)
+const int bitsADC = 13;
+const int usableResolution = pow(2, bitsADC);
+const int readSmoothing = 8;
+
 // the MIDI channel number to send messages
 const int channel = 1;
+
+// Note number of noteOn/noteOff for button
+const int noteNum = 44;
 
 // Setup led pin
 const int ledPin = 13; // Used to indicate if volume is muted
@@ -11,13 +21,12 @@ const int ledPin = 13; // Used to indicate if volume is muted
 // Setup button
 const int buttonPin = 1;
 Bounce pushbutton = Bounce(buttonPin, 50); // 10 ms debounce
-const int noteNum = 44;
 
 // Setup potentiometer
 enum POTDIRECTION { NORMAL, REVERSE };
 int potDirection{NORMAL};
 const int potPin = A0;
-const int potCCNum = 7;
+int potCCNum = 7;
 ResponsiveAnalogRead volumePot(potPin, true);
 
 // Transmit midi cc mode
@@ -29,6 +38,63 @@ int mode{MODE_NORMAL};
 bool ledState = LOW;
 bool muteState = false;
 
+inline void fourteen_bit() {
+  // Read pot
+  int potVal = volumePot.getValue();
+
+  // Shift bits so that it becomes 14 bit
+  potVal = potVal << (14 - bitsADC);
+
+  // Lower 7 bits of signal
+  auto lowBitVal = potVal & 0x7F;
+  lowBitVal = (potDirection == NORMAL) ? lowBitVal : 127 - lowBitVal;
+
+  // Upper 7 bits of signal
+  auto highBitVal = (potVal >> 7) & 0x7F;
+  highBitVal = (potDirection == NORMAL) ? highBitVal : 127 - highBitVal;
+
+  // Debugging
+  if (debug) {
+    Serial.println("Debug info for pot 1");
+
+    Serial.print("Pot1 cc:");
+    Serial.println(potCCNum);
+
+    Serial.print("Usable bits: ");
+    Serial.println(bitsADC);
+
+    Serial.print("Usable resolution: ");
+    Serial.println(usableResolution);
+
+    Serial.print("Raw value: ");
+    Serial.println(potVal);
+
+    Serial.print("Low bit val: ");
+    Serial.println(lowBitVal);
+
+    Serial.print("High bit val: ");
+    Serial.println(highBitVal);
+  }
+
+  // Send cc
+  usbMIDI.sendControlChange(potCCNum + 32, lowBitVal, channel);
+  usbMIDI.sendControlChange(potCCNum, highBitVal, channel);
+}
+
+inline void seven_bit() {
+  // Read pot
+  int potVal = volumePot.getValue();
+
+  // Remove everything above 7 bits
+  potVal = potVal >> (bitsADC - 7);
+
+  // Choose direction
+  potVal = (potDirection == NORMAL) ? potVal : 127 - potVal;
+
+  // Send cc
+  usbMIDI.sendControlChange(potCCNum, potVal, channel);
+}
+
 inline void readPot() {
   // Volume fader
   volumePot.update();
@@ -37,24 +103,12 @@ inline void readPot() {
 
     // 14 bit midi mode
     if (mode == MODE_14BIT) {
-      int potVal = volumePot.getValue();
-      potVal = potVal << 1;
-
-      auto lowBitVal = potVal & 0x7F;
-      lowBitVal = (potDirection == NORMAL) ? lowBitVal : 127 - lowBitVal;
-      auto highBitVal = (potVal >> 7) & 0x7F;
-      highBitVal = (potDirection == NORMAL) ? highBitVal : 127 - highBitVal;
-
-      usbMIDI.sendControlChange(potCCNum, lowBitVal, channel);
-      usbMIDI.sendControlChange(potCCNum + 32, highBitVal, channel);
+      fourteen_bit();
     }
 
     // Normal 7 bit mode
     if (mode == MODE_NORMAL) {
-      int potVal = volumePot.getValue();
-      potVal = potVal / 8;
-      potVal = (potDirection == NORMAL) ? potVal : 127 - potVal;
-      usbMIDI.sendControlChange(potCCNum, potVal, channel);
+      seven_bit();
     }
   }
 }
@@ -86,44 +140,47 @@ inline void blinkLED(int blinkTime) {
   delay(blinkTime * 0.5);
 }
 
-inline void initialButtonReadAction() {
-  if (readButton() == 1) {
-    /* mode = MODE_14BIT; */
-    potDirection = NORMAL;
-    blinkLED(200);
-    blinkLED(200);
-  } else {
-    potDirection = REVERSE;
-
-    /* mode = MODE_NORMAL; */
-  }
-}
-
 void setup() {
+  // Block until serial is connected (on linux)
+  if (debug) {
+    while (!Serial)
+      ;
+  }
+
+  // Setup pins
   pinMode(ledPin, OUTPUT);
   pinMode(buttonPin, INPUT_PULLDOWN);
 
-  /* analogReadResolution(11); */
+  // Analog resolution stuff
+  analogReadResolution(bitsADC);
+  analogReadAveraging(readSmoothing);
 
-  /* smooth input values */
-  /* analogReadAveraging(16); */
+  volumePot.setAnalogResolution(usableResolution);
+  volumePot.enableSleep();
+  volumePot.enableEdgeSnap();
+
+  // Read button and use value to set midi cc mode
+  if (digitalRead(buttonPin) == HIGH) {
+    mode = MODE_14BIT;
+    potCCNum += 1;
+
+    // Announce 14 bit mode
+    blinkLED(150);
+    blinkLED(250);
+    blinkLED(70);
+    blinkLED(450);
+  }
 
   potDirection = REVERSE;
 
-  if (mode == MODE_14BIT) {
-    volumePot.setAnalogResolution(8192);
-  }
-
-  // Read button and use value to set midi cc mode
-  initialButtonReadAction();
 
   // Get initial value when connecting
   readPot();
 }
 
 void loop() {
-    readPot();
-    readMute();
+  readPot();
+  readMute();
 
   // MIDI Controllers should discard incoming MIDI messages.
   // http://forum.pjrc.com/threads/24179-Teensy-3-Ableton-Analog-CC-causes-midi-crash
