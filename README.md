@@ -10,6 +10,11 @@ pio run -t upload
 
 This will compile and upload the code to your Teensy
 
+# Usage
+Turning the controller on, it will work in normal 7 bit midi mode.
+
+If you are pressing the button while it is booting, it will go into 14 bit midi mode (marked by blinking lights). The midi cc num for the pot is now 1 higher than before. See the modality example in the SuperCollider folder for an example.
+
 ## Connections
 
 Button:
